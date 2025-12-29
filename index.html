@@ -1401,8 +1401,20 @@
         // ============================================
         // GAME LOOP
         // ============================================
+        let gameLoopCounter = 0;
         function gameLoop(timestamp) {
-            if (!STATE.isRunning || STATE.isPaused) return;
+            if (!STATE.isRunning || STATE.isPaused) {
+                console.log('⏸️ Game loop paused. isRunning:', STATE.isRunning, 'isPaused:', STATE.isPaused);
+                return;
+            }
+
+            gameLoopCounter++;
+            if (gameLoopCounter === 1) {
+                console.log('🎬 First game loop frame!');
+            }
+            if (gameLoopCounter % 60 === 0) {
+                console.log(`🔄 Game loop running (frame ${gameLoopCounter})`);
+            }
 
             const deltaTime = (timestamp - STATE.lastRenderTime) / 1000;
             STATE.lastRenderTime = timestamp;
@@ -1420,7 +1432,11 @@
             updateParticles(deltaTime);
             updateHUD();
 
-            STATE.renderer.render(STATE.scene, STATE.camera);
+            if (STATE.renderer && STATE.scene && STATE.camera) {
+                STATE.renderer.render(STATE.scene, STATE.camera);
+            } else {
+                console.error('❌ Missing renderer, scene, or camera!');
+            }
 
             requestAnimationFrame(gameLoop);
         }
@@ -1473,7 +1489,12 @@
                     console.log('✅ Three.js ready');
                 }
 
-                if (!STATE.modelReady) {
+                // ALWAYS initialize MediaPipe on first game start
+                console.log('📷 Checking camera status...');
+                console.log('STATE.modelReady:', STATE.modelReady);
+                console.log('STATE.videoElement:', STATE.videoElement);
+
+                if (!STATE.modelReady || !STATE.videoElement || !STATE.videoElement.srcObject) {
                     console.log('📷 Initializing MediaPipe...');
                     // Show brief loading indicator
                     updateLoadingProgress(50, 'Loading camera...');
@@ -1482,6 +1503,9 @@
                     try {
                         await withTimeout(initMediaPipe(), 20000, 'カメラの初期化がタイムアウトしました。\nページを再読み込みしてください。\nCamera initialization timed out. Please reload.');
                         console.log('✅ MediaPipe ready');
+                    } catch (initError) {
+                        console.error('❌ MediaPipe initialization failed:', initError);
+                        throw initError; // Re-throw to trigger error overlay
                     } finally {
                         // Always hide loading overlay
                         document.getElementById('loadingOverlay').classList.add('hidden');
@@ -1489,6 +1513,7 @@
                     }
                 } else {
                     console.log('✅ MediaPipe already ready');
+                    console.log('Video stream active:', STATE.videoElement.srcObject.active);
                 }
 
                 // Reset immediately - no delay
@@ -1510,8 +1535,15 @@
                 STATE.players[0].shots = 0;
                 STATE.players[0].hits = 0;
 
+                console.log('📝 Generating question...');
                 STATE.currentQuestion = generateQuestion();
+                console.log('Question:', STATE.currentQuestion);
+
+                console.log('🎯 Spawning targets...');
                 spawnTargets();
+                console.log('Targets spawned:', STATE.targets.length);
+
+                console.log('🖼️ Updating HUD...');
                 updateHUD();
                 console.log('✅ Game state initialized');
 
@@ -1520,7 +1552,9 @@
                 STATE.gameStartTime = performance.now();
                 STATE.lastRenderTime = STATE.gameStartTime;
 
+                console.log('🎬 Starting game loop...');
                 requestAnimationFrame(gameLoop);
+                console.log('👁️ Starting detection loop...');
                 detectionLoop();
                 console.log('🚀 Game started successfully!');
 
