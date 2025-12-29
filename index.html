@@ -759,9 +759,9 @@
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: null,
                 depthTest: false, // Render on top
-                sizeAttenuation: true // Scale with distance (attach to balloon)
+                sizeAttenuation: false // Always same size (readable at any distance)
             }));
-            sprite.scale.set(2.0, 2.0, 1); // Larger for better readability
+            sprite.scale.set(1.8, 1.8, 1); // Balanced size for all distances
             sprite.renderOrder = 999; // Render last
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
