@@ -936,16 +936,6 @@
 
                 STATE.hands.onResults(onHandsResults);
 
-                updateLoadingProgress(70, 'Initializing detection...');
-
-                // CRITICAL: Send a test frame to actually trigger model download
-                // The model only starts loading when send() is first called
-                try {
-                    await STATE.hands.send({ image: STATE.videoElement });
-                } catch (modelError) {
-                    throw new Error('ハンド検出モデルの読み込みに失敗しました。\nインターネット接続を確認してください。\nFailed to load hand detection model. Please check your internet connection.');
-                }
-
                 updateLoadingProgress(100, 'Ready!');
 
                 STATE.modelReady = true;
@@ -1454,9 +1444,9 @@
             try {
                 STATE.gameMode = 'solo'; // SOLO ONLY
 
-                // Show loading overlay during initialization
-                document.getElementById('loadingOverlay').classList.remove('hidden');
-                updateLoadingProgress(0, 'Starting game...');
+                // Show HUD immediately and hide loading
+                document.getElementById('hud').classList.remove('hidden');
+                hideAllOverlays();
 
                 if (!STATE.audioContext) {
                     await initAudio();
@@ -1467,14 +1457,17 @@
                 }
 
                 if (!STATE.modelReady) {
-                    // Add timeout protection (30 seconds)
-                    await withTimeout(initMediaPipe(), 30000, 'MediaPipe initialization timed out. Please check your internet connection and try again.');
-                }
+                    // Show brief loading indicator
+                    updateLoadingProgress(50, 'Loading camera...');
+                    document.getElementById('loadingOverlay').classList.remove('hidden');
 
-                // Hide loading overlay and show HUD
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                document.getElementById('hud').classList.remove('hidden');
-                hideAllOverlays();
+                    try {
+                        await withTimeout(initMediaPipe(), 20000, 'カメラの初期化がタイムアウトしました。\nページを再読み込みしてください。\nCamera initialization timed out. Please reload.');
+                    } finally {
+                        // Always hide loading overlay
+                        document.getElementById('loadingOverlay').classList.add('hidden');
+                    }
+                }
 
                 // Reset immediately - no delay
                 STATE.questionIndex = 0;
