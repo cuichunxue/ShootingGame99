@@ -314,7 +314,16 @@
         <div class="question-display" id="questionDisplay">?</div>
     </div>
 
-    <!-- Start screen removed - auto-start on load -->
+    <!-- Start Screen - REQUIRED FOR iOS CAMERA PERMISSION -->
+    <div id="startScreen" class="overlay">
+        <h1>🎯 九九マスター</h1>
+        <p>手を使って風船を撃って、九九をマスターしよう！<br>Kuku Master - Shoot balloons with hand gestures!</p>
+        <button class="btn" onclick="startGameFromButton()">🚀 スタート / Start</button>
+        <p style="font-size: 0.9rem; margin-top: 2rem; color: #888;">
+            ※ カメラの使用を許可してください<br>
+            Please allow camera access
+        </p>
+    </div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="overlay hidden">
@@ -1585,6 +1594,17 @@
             showOverlay('errorOverlay');
         }
 
+        // START GAME FROM BUTTON - Required for iOS camera permission
+        async function startGameFromButton() {
+            console.log('🎯 Start button clicked - User gesture detected!');
+
+            // Hide start screen
+            document.getElementById('startScreen').classList.add('hidden');
+
+            // Start the game (this will trigger camera permission)
+            await startGame('solo');
+        }
+
         // ============================================
         // PAGE VISIBILITY HANDLING
         // ============================================
@@ -1603,10 +1623,11 @@
         });
 
         // ============================================
-        // INITIALIZATION - AUTO START
+        // INITIALIZATION - SHOW START SCREEN
         // ============================================
         window.addEventListener('load', () => {
             console.log('✅ Math Shooting Game loaded!');
+            console.log('📱 Waiting for user to tap START button (required for iOS camera permission)');
 
             // Load best scores
             try {
@@ -1615,8 +1636,9 @@
                 STATE.bestScores = [];
             }
 
-            // AUTO-START GAME (Solo mode only) - instant start
-            setTimeout(() => startGame('solo'), 100);
+            // Show start screen - user must tap to enable camera
+            // NO AUTO-START - iOS requires user gesture for camera access
+            console.log('👆 Please tap the START button to begin');
         });
 
         // Prevent scroll/bounce
