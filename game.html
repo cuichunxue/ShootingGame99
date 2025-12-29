@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Math Shooting Game</title>
+    <title>九九マスター / Kuku Master</title>
     <style>
         * {
             margin: 0;
@@ -306,6 +306,7 @@
     <!-- MINIMAL HUD -->
     <div id="hud" class="hidden">
         <div class="hud-row">
+            <div class="hud-item">🎯 Level <span id="levelDisplay">1</span></div>
             <div class="hud-item">📊 <span id="questionCount">0</span>/10</div>
             <div class="hud-item">⏱️ <span id="timeDisplay">60</span>s</div>
         </div>
@@ -440,12 +441,20 @@
             SCORE_SMART: 50,
             PENALTY_WRONG: 20,
 
-            // Adaptive difficulty
+            // Adaptive difficulty - 10 levels for 九九 mastery
+            // Levels 1-5: Multiplication (all random 1-9段)
+            // Levels 6-10: Division (all random 1-9段 inverse)
             DIFFICULTY_LEVELS: {
-                1: { range: [0, 10], distractorCount: 3 },
-                2: { range: [0, 15], distractorCount: 4 },
-                3: { range: [0, 20], distractorCount: 5 },
-                4: { range: [0, 20], distractorCount: 6 }
+                1: { range: [1, 81], distractorCount: 4, timeLimit: 60 },   // 九九 Lv1
+                2: { range: [1, 81], distractorCount: 5, timeLimit: 50 },   // 九九 Lv2
+                3: { range: [1, 81], distractorCount: 6, timeLimit: 45 },   // 九九 Lv3
+                4: { range: [1, 81], distractorCount: 7, timeLimit: 40 },   // 九九 Lv4
+                5: { range: [1, 81], distractorCount: 8, timeLimit: 35 },   // 九九 Lv5
+                6: { range: [1, 9], distractorCount: 5, timeLimit: 50 },    // 割り算 Lv1
+                7: { range: [1, 9], distractorCount: 6, timeLimit: 45 },    // 割り算 Lv2
+                8: { range: [1, 9], distractorCount: 7, timeLimit: 40 },    // 割り算 Lv3
+                9: { range: [1, 9], distractorCount: 8, timeLimit: 35 },    // 割り算 Lv4
+                10: { range: [1, 9], distractorCount: 9, timeLimit: 30 }    // 割り算 Lv5 (最高難度)
             }
         };
 
@@ -453,60 +462,15 @@
         // MATH QUESTION GENERATOR (NO TEXT HINTS)
         // ============================================
         const QUESTION_TEMPLATES = [
-            // ===== ADDITION: Make-10 (0-20) =====
+            // ===== 九九 MULTIPLICATION (Levels 1-5) =====
             {
-                type: 'addition_make10',
+                type: 'multiplication_kuku',
                 difficulty: 1,
                 generate: () => {
-                    const a = 7 + Math.floor(Math.random() * 3); // 7-9
-                    const toTen = 10 - a;
-                    const extra = 1 + Math.floor(Math.random() * Math.min(5, 20 - 10));
-                    const b = toTen + extra;
-                    const answer = a + b;
-                    const strategy = [10]; // Intermediate: 10
-
-                    return {
-                        question: `${a} + ${b}`,
-                        answer,
-                        strategy
-                    };
-                }
-            },
-
-            // ===== SUBTRACTION: Count-up (0-20) =====
-            {
-                type: 'subtraction_countup',
-                difficulty: 2,
-                generate: () => {
-                    const answer = 3 + Math.floor(Math.random() * 8);
-                    const a = 10 + Math.floor(Math.random() * 10);
-                    const b = a - answer;
-                    const strategy = [answer]; // The gap
-
-                    return {
-                        question: `${a} − ${b}`,
-                        answer,
-                        strategy
-                    };
-                }
-            },
-
-            // ===== MULTIPLICATION: Decomposition (1-9) =====
-            {
-                type: 'multiplication_decompose',
-                difficulty: 3,
-                generate: () => {
-                    const a = 5 + Math.floor(Math.random() * 4); // 5-8
-                    const b = 3 + Math.floor(Math.random() * 4); // 3-6
-
-                    const part1 = 2;
-                    const part2 = b - part1;
-
-                    const step1 = a * part1;
-                    const step2 = a * part2;
+                    const a = 1 + Math.floor(Math.random() * 9); // 1-9
+                    const b = 1 + Math.floor(Math.random() * 9); // 1-9
                     const answer = a * b;
-
-                    const strategy = [step1, step2];
+                    const strategy = []; // No hints for mastery
 
                     return {
                         question: `${a} × ${b}`,
@@ -516,39 +480,19 @@
                 }
             },
 
-            // ===== MULTIPLICATION: 9× shortcut =====
+            // ===== 割り算 DIVISION (Levels 6-10) =====
             {
-                type: 'multiplication_9x',
-                difficulty: 3,
+                type: 'division_kuku',
+                difficulty: 6,
                 generate: () => {
-                    const b = 3 + Math.floor(Math.random() * 6);
-                    const step1 = 10 * b;
-                    const step2 = b;
-                    const answer = 9 * b;
+                    const divisor = 1 + Math.floor(Math.random() * 9); // 1-9
+                    const answer = 1 + Math.floor(Math.random() * 9); // 1-9
+                    const dividend = divisor * answer; // Result of 九九
 
-                    const strategy = [step1, step2];
+                    const strategy = []; // No hints for mastery
 
                     return {
-                        question: `9 × ${b}`,
-                        answer,
-                        strategy
-                    };
-                }
-            },
-
-            // ===== INVERSE MULTIPLICATION (NO ÷ symbol) =====
-            {
-                type: 'inverse_multiplication',
-                difficulty: 4,
-                generate: () => {
-                    const a = 3 + Math.floor(Math.random() * 5); // 3-7
-                    const answer = 2 + Math.floor(Math.random() * 6); // 2-7
-                    const b = a * answer;
-
-                    const strategy = [answer];
-
-                    return {
-                        question: `${a} × ? = ${b}`,
+                        question: `${dividend} ÷ ${divisor}`,
                         answer,
                         strategy
                     };
@@ -557,9 +501,10 @@
         ];
 
         function generateQuestion() {
-            // Filter by difficulty
-            const available = QUESTION_TEMPLATES.filter(t => t.difficulty <= STATE.difficultyLevel);
-            const template = available[Math.floor(Math.random() * available.length)];
+            // Level 1-5: Multiplication, Level 6-10: Division
+            const template = STATE.difficultyLevel <= 5
+                ? QUESTION_TEMPLATES[0]  // Multiplication
+                : QUESTION_TEMPLATES[1]; // Division
             const q = template.generate();
 
             // Generate distractors based on difficulty
@@ -1122,11 +1067,6 @@
                 showFeedback(`CORRECT! +${CONFIG.SCORE_CORRECT}`, '#4CAF50');
                 playSFX('correct');
 
-                // Adaptive difficulty
-                if (STATE.players[0].streak >= 5 && STATE.difficultyLevel < 4) {
-                    STATE.difficultyLevel++;
-                }
-
                 nextQuestion();
 
             } else if (isStrategy) {
@@ -1147,11 +1087,6 @@
 
                 showFeedback(`WRONG -${CONFIG.PENALTY_WRONG}`, '#ff4444');
                 playSFX('wrong');
-
-                // Reduce difficulty after mistakes
-                if (STATE.players[0].streak === 0 && STATE.difficultyLevel > 1) {
-                    STATE.difficultyLevel = Math.max(1, STATE.difficultyLevel - 1);
-                }
             }
 
             updateHUD();
@@ -1241,6 +1176,7 @@
         }
 
         function updateHUD() {
+            document.getElementById('levelDisplay').textContent = STATE.difficultyLevel;
             document.getElementById('questionCount').textContent = STATE.questionIndex;
             document.getElementById('timeDisplay').textContent = Math.ceil(Math.max(0, STATE.timeLeft));
 
@@ -1361,7 +1297,8 @@
             STATE.lastRenderTime = timestamp;
 
             const elapsed = (timestamp - STATE.gameStartTime) / 1000;
-            STATE.timeLeft = Math.max(0, CONFIG.TIME_LIMIT - elapsed);
+            const currentTimeLimit = CONFIG.DIFFICULTY_LEVELS[STATE.difficultyLevel].timeLimit;
+            STATE.timeLeft = Math.max(0, currentTimeLimit - elapsed);
 
             if (STATE.timeLeft <= 0 && STATE.questionIndex < CONFIG.QUESTIONS_PER_ROUND) {
                 endRound();
@@ -1426,8 +1363,11 @@
 
                 // Reset immediately - no delay
                 STATE.questionIndex = 0;
-                STATE.timeLeft = CONFIG.TIME_LIMIT;
-                STATE.difficultyLevel = 1;
+                // Keep current difficulty level (set by nextRound), or start at 1
+                if (!STATE.difficultyLevel || STATE.difficultyLevel < 1) {
+                    STATE.difficultyLevel = 1;
+                }
+                STATE.timeLeft = CONFIG.DIFFICULTY_LEVELS[STATE.difficultyLevel].timeLimit;
                 STATE.handStates = [
                     { state: 'idle', handedness: null, lastPos: null, cooldownEnd: 0, landmarkIndex: null }
                 ];
@@ -1462,6 +1402,10 @@
         }
 
         function nextRound() {
+            // Level up after each round (max level 10)
+            if (STATE.difficultyLevel < 10) {
+                STATE.difficultyLevel++;
+            }
             startGame(STATE.gameMode);
         }
 
