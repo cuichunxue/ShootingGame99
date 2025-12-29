@@ -737,9 +737,9 @@
         }
 
         function createTargetMesh() {
-            // BALLOON SHAPE: Stretched sphere
+            // BALLOON SHAPE: Large stretched sphere
             const geometry = new THREE.SphereGeometry(1, 8, 8);
-            geometry.scale(0.8, 1.0, 0.8); // Elongated vertically like a balloon
+            geometry.scale(2.0, 2.5, 2.0); // Large balloon - maximum size
 
             const material = new THREE.MeshLambertMaterial({
                 color: 0x888888,
@@ -749,10 +749,10 @@
             const mesh = new THREE.Mesh(geometry, material);
 
             // Balloon string (thin line at bottom)
-            const stringGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 4);
+            const stringGeometry = new THREE.CylinderGeometry(0.05, 0.05, 3.75, 4); // 2.5x larger
             const stringMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
             const string = new THREE.Mesh(stringGeometry, stringMaterial);
-            string.position.y = -1.25; // Below balloon
+            string.position.y = -3.125; // Below balloon (2.5x lower)
             mesh.add(string);
 
             // Number sprite on balloon
@@ -761,7 +761,7 @@
                 depthTest: false, // Render on top
                 sizeAttenuation: false // Always same size (readable at any distance)
             }));
-            sprite.scale.set(0.3, 0.3, 1); // 1/3 size - very compact
+            sprite.scale.set(0.75, 0.75, 1); // Scaled proportionally to balloon (2.5x from 0.3)
             sprite.renderOrder = 999; // Render last
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
