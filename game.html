@@ -442,19 +442,21 @@
             PENALTY_WRONG: 20,
 
             // Adaptive difficulty - 10 levels for 九九 mastery
-            // Levels 1-5: Multiplication (all random 1-9段)
-            // Levels 6-10: Division (all random 1-9段 inverse)
+            // Levels 1-3: 九九 (1-9)
+            // Level 4: 九九 + squares 10-15
+            // Level 5: 九九 + squares 10-20
+            // Levels 6-10: Division
             DIFFICULTY_LEVELS: {
-                1: { range: [1, 81], distractorCount: 4, timeLimit: 60 },   // 九九 Lv1
-                2: { range: [1, 81], distractorCount: 5, timeLimit: 50 },   // 九九 Lv2
-                3: { range: [1, 81], distractorCount: 6, timeLimit: 45 },   // 九九 Lv3
-                4: { range: [1, 81], distractorCount: 7, timeLimit: 40 },   // 九九 Lv4
-                5: { range: [1, 81], distractorCount: 8, timeLimit: 35 },   // 九九 Lv5
-                6: { range: [1, 9], distractorCount: 5, timeLimit: 50 },    // 割り算 Lv1
-                7: { range: [1, 9], distractorCount: 6, timeLimit: 45 },    // 割り算 Lv2
-                8: { range: [1, 9], distractorCount: 7, timeLimit: 40 },    // 割り算 Lv3
-                9: { range: [1, 9], distractorCount: 8, timeLimit: 35 },    // 割り算 Lv4
-                10: { range: [1, 9], distractorCount: 9, timeLimit: 30 }    // 割り算 Lv5 (最高難度)
+                1: { range: [1, 81], distractorCount: 4, timeLimit: 60 },    // 九九 Lv1
+                2: { range: [1, 81], distractorCount: 5, timeLimit: 50 },    // 九九 Lv2
+                3: { range: [1, 81], distractorCount: 6, timeLimit: 45 },    // 九九 Lv3
+                4: { range: [1, 225], distractorCount: 7, timeLimit: 50 },   // 九九 + 10²-15² (緩和: 40→50秒)
+                5: { range: [1, 400], distractorCount: 8, timeLimit: 45 },   // 九九 + 10²-20² (緩和: 35→45秒)
+                6: { range: [1, 9], distractorCount: 5, timeLimit: 50 },     // 割り算 Lv1
+                7: { range: [1, 9], distractorCount: 6, timeLimit: 45 },     // 割り算 Lv2
+                8: { range: [1, 9], distractorCount: 7, timeLimit: 40 },     // 割り算 Lv3
+                9: { range: [1, 9], distractorCount: 8, timeLimit: 35 },     // 割り算 Lv4
+                10: { range: [1, 9], distractorCount: 9, timeLimit: 30 }     // 割り算 Lv5 (最高難度)
             }
         };
 
@@ -462,7 +464,7 @@
         // MATH QUESTION GENERATOR (NO TEXT HINTS)
         // ============================================
         const QUESTION_TEMPLATES = [
-            // ===== 九九 MULTIPLICATION (Levels 1-5) =====
+            // ===== 九九 MULTIPLICATION (Levels 1-3) =====
             {
                 type: 'multiplication_kuku',
                 difficulty: 1,
@@ -477,6 +479,60 @@
                         answer,
                         strategy
                     };
+                }
+            },
+
+            // ===== 九九 + SQUARES 10-15 (Level 4) =====
+            {
+                type: 'multiplication_extended_15',
+                difficulty: 4,
+                generate: () => {
+                    // 80% regular 九九, 20% square numbers 10-15 (緩和: 70%→80%)
+                    if (Math.random() < 0.8) {
+                        const a = 1 + Math.floor(Math.random() * 9);
+                        const b = 1 + Math.floor(Math.random() * 9);
+                        const answer = a * b;
+                        return {
+                            question: `${a} × ${b}`,
+                            answer,
+                            strategy: []
+                        };
+                    } else {
+                        const n = 10 + Math.floor(Math.random() * 6); // 10-15
+                        const answer = n * n;
+                        return {
+                            question: `${n} × ${n}`,
+                            answer,
+                            strategy: []
+                        };
+                    }
+                }
+            },
+
+            // ===== 九九 + SQUARES 10-20 (Level 5) =====
+            {
+                type: 'multiplication_extended_20',
+                difficulty: 5,
+                generate: () => {
+                    // 70% regular 九九, 30% square numbers 10-20 (緩和: 60%→70%)
+                    if (Math.random() < 0.7) {
+                        const a = 1 + Math.floor(Math.random() * 9);
+                        const b = 1 + Math.floor(Math.random() * 9);
+                        const answer = a * b;
+                        return {
+                            question: `${a} × ${b}`,
+                            answer,
+                            strategy: []
+                        };
+                    } else {
+                        const n = 10 + Math.floor(Math.random() * 11); // 10-20
+                        const answer = n * n;
+                        return {
+                            question: `${n} × ${n}`,
+                            answer,
+                            strategy: []
+                        };
+                    }
                 }
             },
 
@@ -501,10 +557,17 @@
         ];
 
         function generateQuestion() {
-            // Level 1-5: Multiplication, Level 6-10: Division
-            const template = STATE.difficultyLevel <= 5
-                ? QUESTION_TEMPLATES[0]  // Multiplication
-                : QUESTION_TEMPLATES[1]; // Division
+            // Select template based on level
+            let template;
+            if (STATE.difficultyLevel <= 3) {
+                template = QUESTION_TEMPLATES[0];  // 九九 only (1-9)
+            } else if (STATE.difficultyLevel === 4) {
+                template = QUESTION_TEMPLATES[1];  // 九九 + squares 10-15
+            } else if (STATE.difficultyLevel === 5) {
+                template = QUESTION_TEMPLATES[2];  // 九九 + squares 10-20
+            } else {
+                template = QUESTION_TEMPLATES[3];  // Division
+            }
             const q = template.generate();
 
             // Generate distractors based on difficulty
@@ -1064,7 +1127,13 @@
                     STATE.players[0].streak
                 );
 
-                showFeedback(`CORRECT! +${CONFIG.SCORE_CORRECT}`, '#4CAF50');
+                // 🔥 Combo visualization
+                if (STATE.players[0].streak >= 3) {
+                    const comboSize = Math.min(STATE.players[0].streak, 10);
+                    showFeedback(`${comboSize} COMBO! 🔥`, '#FF6B00');
+                } else {
+                    showFeedback(`CORRECT! +${CONFIG.SCORE_CORRECT}`, '#4CAF50');
+                }
                 playSFX('correct');
 
                 nextQuestion();
@@ -1212,6 +1281,15 @@
                 return;
             }
 
+            // 🎯 Milestone rewards for motivation
+            if (STATE.questionIndex === 5) {
+                showFeedback("Half Way! 🎯", '#00D4FF');
+                playSFX('correct');
+            } else if (STATE.questionIndex === 8) {
+                showFeedback("Almost There! 💪", '#FFD700');
+                playSFX('correct');
+            }
+
             STATE.currentQuestion = generateQuestion();
             spawnTargets();
             updateHUD();
@@ -1219,6 +1297,15 @@
 
         function endRound() {
             STATE.isRunning = false;
+
+            // ⭐ Perfect Round Bonus
+            const perfectRound = STATE.players[0].hits === CONFIG.QUESTIONS_PER_ROUND;
+            if (perfectRound) {
+                STATE.players[0].score += 500;
+                showFeedback("⭐ PERFECT! +500 ⭐", '#FFD700');
+                playSFX('correct');
+            }
+
             saveBestScores();
             showRanking();
         }
