@@ -1419,6 +1419,16 @@
             gameLoopCounter++;
             if (gameLoopCounter === 1) {
                 console.log('🎬 First game loop frame!');
+
+                // Debug: Check sprite visibility
+                console.log('🔍 Sprite debug:');
+                STATE.targets.forEach((target, i) => {
+                    const sprite = target.userData.sprite;
+                    console.log(`  Balloon ${i}: number=${target.userData.number}, sprite.visible=${sprite.visible}, sprite.material.map=${!!sprite.material.map}, sprite.scale=${sprite.scale.x}`);
+                    if (sprite.material.map) {
+                        console.log(`    Texture size: ${sprite.material.map.image.width}x${sprite.material.map.image.height}`);
+                    }
+                });
             }
             if (gameLoopCounter % 60 === 0) {
                 console.log(`🔄 Game loop running (frame ${gameLoopCounter})`);
