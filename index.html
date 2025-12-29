@@ -756,13 +756,8 @@
             mesh.add(string);
 
             // Number sprite on balloon
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-                map: null,
-                transparent: true,
-                depthTest: true,
-                depthWrite: false
-            }));
-            sprite.scale.set(2.0, 2.0, 1); // Larger for better visibility
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: null }));
+            sprite.scale.set(1.5, 1.5, 1);
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
 
@@ -831,9 +826,14 @@
             ctx.fillText(number.toString(), 128, 128);
 
             const texture = new THREE.CanvasTexture(canvas);
-            target.userData.sprite.material.map = texture;
-            target.userData.sprite.material.needsUpdate = true;
+            texture.needsUpdate = true;
 
+            // Keep sprite reference before overwriting userData
+            const spriteRef = target.userData.sprite;
+            spriteRef.material.map = texture;
+            spriteRef.material.needsUpdate = true;
+
+            // Assign target properties (preserve sprite reference)
             target.userData = {
                 number,
                 isAnswer,
@@ -843,9 +843,11 @@
                     0.015 + Math.random() * 0.01, // FLOAT UPWARD like balloons!
                     (Math.random() - 0.5) * 0.01
                 ),
-                sprite: target.userData.sprite,
+                sprite: spriteRef,
                 pulsePhase: Math.random() * Math.PI * 2 // For pulsing animation
             };
+
+            console.log(`Created balloon #${number}, sprite texture:`, spriteRef.material.map ? 'OK' : 'MISSING');
 
             target.visible = true;
             STATE.targets.push(target);
@@ -1104,7 +1106,8 @@
 
             const crosshair = new THREE.Mesh(geometry, material);
             crosshair.position.copy(targetPos);
-            crosshair.lookAt(startPos);
+            // Make crosshair always face camera (not tilted)
+            crosshair.lookAt(STATE.camera.position);
 
             // Add center dot (larger)
             const dotGeometry = new THREE.CircleGeometry(0.35, 12);
