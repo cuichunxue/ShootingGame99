@@ -900,12 +900,14 @@
         // ============================================
         async function initMediaPipe() {
             try {
+                console.log('📷 MediaPipe init: Requesting camera...');
                 updateLoadingProgress(20, 'Requesting camera...');
 
                 STATE.videoElement = document.getElementById('hiddenVideo');
 
                 // Request camera access
                 try {
+                    console.log('📷 Calling getUserMedia...');
                     const stream = await navigator.mediaDevices.getUserMedia({
                         video: {
                             facingMode: 'user',
@@ -913,19 +915,24 @@
                             height: { ideal: 240 }
                         }
                     });
+                    console.log('✅ Camera stream obtained');
                     STATE.videoElement.srcObject = stream;
                     await STATE.videoElement.play();
+                    console.log('✅ Video playing');
                 } catch (cameraError) {
+                    console.error('❌ Camera error:', cameraError);
                     throw new Error('カメラアクセスが拒否されました。\nCamera access denied. Please allow camera permission and reload.');
                 }
 
                 updateLoadingProgress(40, 'Loading hand model...');
+                console.log('📷 Creating Hands instance...');
 
                 STATE.hands = new Hands({
                     locateFile: (file) => {
                         return `https://unpkg.com/@mediapipe/hands@0.4.1646424915/${file}`;
                     }
                 });
+                console.log('✅ Hands instance created');
 
                 STATE.hands.setOptions({
                     maxNumHands: 1, // SOLO - only need 1 hand
@@ -933,14 +940,18 @@
                     minDetectionConfidence: 0.5, // Lower for faster detection
                     minTrackingConfidence: 0.5
                 });
+                console.log('✅ Hands options set');
 
                 STATE.hands.onResults(onHandsResults);
+                console.log('✅ onResults callback registered');
 
                 updateLoadingProgress(100, 'Ready!');
 
                 STATE.modelReady = true;
+                console.log('✅ MediaPipe fully ready');
 
             } catch (error) {
+                console.error('❌ MediaPipe init error:', error);
                 throw error;
             }
         }
@@ -1442,31 +1453,42 @@
         // ============================================
         async function startGame(mode) {
             try {
+                console.log('🎮 Starting game...');
                 STATE.gameMode = 'solo'; // SOLO ONLY
 
                 // Show HUD immediately and hide loading
                 document.getElementById('hud').classList.remove('hidden');
                 hideAllOverlays();
+                console.log('✅ HUD shown');
 
                 if (!STATE.audioContext) {
+                    console.log('🔊 Initializing audio...');
                     await initAudio();
+                    console.log('✅ Audio ready');
                 }
 
                 if (!STATE.scene) {
+                    console.log('🎨 Initializing Three.js...');
                     initThreeJS();
+                    console.log('✅ Three.js ready');
                 }
 
                 if (!STATE.modelReady) {
+                    console.log('📷 Initializing MediaPipe...');
                     // Show brief loading indicator
                     updateLoadingProgress(50, 'Loading camera...');
                     document.getElementById('loadingOverlay').classList.remove('hidden');
 
                     try {
                         await withTimeout(initMediaPipe(), 20000, 'カメラの初期化がタイムアウトしました。\nページを再読み込みしてください。\nCamera initialization timed out. Please reload.');
+                        console.log('✅ MediaPipe ready');
                     } finally {
                         // Always hide loading overlay
                         document.getElementById('loadingOverlay').classList.add('hidden');
+                        console.log('✅ Loading overlay hidden');
                     }
+                } else {
+                    console.log('✅ MediaPipe already ready');
                 }
 
                 // Reset immediately - no delay
@@ -1491,6 +1513,7 @@
                 STATE.currentQuestion = generateQuestion();
                 spawnTargets();
                 updateHUD();
+                console.log('✅ Game state initialized');
 
                 STATE.isRunning = true;
                 STATE.isPaused = false;
@@ -1499,8 +1522,10 @@
 
                 requestAnimationFrame(gameLoop);
                 detectionLoop();
+                console.log('🚀 Game started successfully!');
 
             } catch (error) {
+                console.error('❌ Game start error:', error);
                 showError(error.message);
             }
         }
