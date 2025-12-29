@@ -32,17 +32,6 @@
             z-index: 0;
         }
 
-        #handCanvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 50;
-            pointer-events: none;
-        }
-
         /* NEVER DISPLAY CAMERA */
         #hiddenVideo {
             position: absolute;
@@ -311,9 +300,6 @@
 
     <!-- Three.js Canvas -->
     <canvas id="gameCanvas"></canvas>
-
-    <!-- Hand Tracking Visualization Canvas -->
-    <canvas id="handCanvas"></canvas>
 
     <!-- MINIMAL HUD -->
     <div id="hud" class="hidden">
@@ -989,69 +975,6 @@
 
         function onHandsResults(results) {
             STATE.handsData = results.multiHandLandmarks || [];
-
-            // Draw hand visualization on canvas
-            const canvas = document.getElementById('handCanvas');
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw hand landmarks and aiming circle
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const landmarks = results.multiHandLandmarks[0];
-                const indexTip = landmarks[8]; // Index finger tip
-
-                // Convert normalized coordinates to canvas coordinates
-                const x = indexTip.x * canvas.width;
-                const y = indexTip.y * canvas.height;
-
-                // Draw aiming circle at index finger tip
-                ctx.beginPath();
-                ctx.arc(x, y, 30, 0, Math.PI * 2);
-                ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
-                // Draw center dot
-                ctx.beginPath();
-                ctx.arc(x, y, 5, 0, Math.PI * 2);
-                ctx.fillStyle = '#00ff00';
-                ctx.fill();
-
-                // Draw hand skeleton (connect landmarks)
-                ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
-                ctx.lineWidth = 2;
-
-                // Connection pairs for hand skeleton
-                const connections = [
-                    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-                    [0, 5], [5, 6], [6, 7], [7, 8], // Index
-                    [0, 9], [9, 10], [10, 11], [11, 12], // Middle
-                    [0, 13], [13, 14], [14, 15], [15, 16], // Ring
-                    [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
-                    [5, 9], [9, 13], [13, 17] // Palm
-                ];
-
-                connections.forEach(([start, end]) => {
-                    const startLm = landmarks[start];
-                    const endLm = landmarks[end];
-                    ctx.beginPath();
-                    ctx.moveTo(startLm.x * canvas.width, startLm.y * canvas.height);
-                    ctx.lineTo(endLm.x * canvas.width, endLm.y * canvas.height);
-                    ctx.stroke();
-                });
-
-                // Draw landmarks as dots
-                landmarks.forEach((landmark, i) => {
-                    ctx.beginPath();
-                    ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = i === 8 ? '#ffff00' : '#00ff00'; // Yellow for index tip
-                    ctx.fill();
-                });
-            }
 
             // Assign stable hand IDs
             if (results.multiHandedness) {
