@@ -904,18 +904,22 @@
 
                 STATE.videoElement = document.getElementById('hiddenVideo');
 
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'user',
-                        width: { ideal: 320 }, // Even lower for faster loading
-                        height: { ideal: 240 }
-                    }
-                });
+                // Request camera access
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: 'user',
+                            width: { ideal: 320 }, // Even lower for faster loading
+                            height: { ideal: 240 }
+                        }
+                    });
+                    STATE.videoElement.srcObject = stream;
+                    await STATE.videoElement.play();
+                } catch (cameraError) {
+                    throw new Error('カメラアクセスが拒否されました。\nCamera access denied. Please allow camera permission and reload.');
+                }
 
-                STATE.videoElement.srcObject = stream;
-                await STATE.videoElement.play();
-
-                updateLoadingProgress(60, 'Loading hand model...');
+                updateLoadingProgress(40, 'Loading hand model...');
 
                 STATE.hands = new Hands({
                     locateFile: (file) => {
@@ -932,12 +936,22 @@
 
                 STATE.hands.onResults(onHandsResults);
 
+                updateLoadingProgress(70, 'Initializing detection...');
+
+                // CRITICAL: Send a test frame to actually trigger model download
+                // The model only starts loading when send() is first called
+                try {
+                    await STATE.hands.send({ image: STATE.videoElement });
+                } catch (modelError) {
+                    throw new Error('ハンド検出モデルの読み込みに失敗しました。\nインターネット接続を確認してください。\nFailed to load hand detection model. Please check your internet connection.');
+                }
+
                 updateLoadingProgress(100, 'Ready!');
 
                 STATE.modelReady = true;
 
             } catch (error) {
-                throw new Error(`Camera/MediaPipe init failed: ${error.message}`);
+                throw error;
             }
         }
 
@@ -1231,6 +1245,15 @@
             document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden'));
         }
 
+        async function withTimeout(promise, timeoutMs, errorMessage) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+                )
+            ]);
+        }
+
         function showFeedback(text, color) {
             const existing = document.querySelector('.feedback');
             if (existing) existing.remove();
@@ -1431,10 +1454,9 @@
             try {
                 STATE.gameMode = 'solo'; // SOLO ONLY
 
-                // NO LOADING SCREEN - Initialize in background
-                // Show HUD immediately
-                document.getElementById('hud').classList.remove('hidden');
-                hideAllOverlays();
+                // Show loading overlay during initialization
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                updateLoadingProgress(0, 'Starting game...');
 
                 if (!STATE.audioContext) {
                     await initAudio();
@@ -1445,8 +1467,14 @@
                 }
 
                 if (!STATE.modelReady) {
-                    await initMediaPipe();
+                    // Add timeout protection (30 seconds)
+                    await withTimeout(initMediaPipe(), 30000, 'MediaPipe initialization timed out. Please check your internet connection and try again.');
                 }
+
+                // Hide loading overlay and show HUD
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('hud').classList.remove('hidden');
+                hideAllOverlays();
 
                 // Reset immediately - no delay
                 STATE.questionIndex = 0;
