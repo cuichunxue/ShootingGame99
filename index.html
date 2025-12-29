@@ -758,6 +758,7 @@
             // Number sprite on balloon
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: null }));
             sprite.scale.set(1.5, 1.5, 1);
+            sprite.position.set(0, 0, 0.5); // Position in front of balloon
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
 
@@ -814,11 +815,16 @@
                 Math.sin(angle) * radius - 10
             );
 
-            // Text sprite
+            // Text sprite - create canvas texture
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 256;
             const ctx = canvas.getContext('2d');
+
+            // Clear canvas with transparent background
+            ctx.clearRect(0, 0, 256, 256);
+
+            // Draw white text
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 120px Arial';
             ctx.textAlign = 'center';
@@ -830,8 +836,16 @@
 
             // Keep sprite reference before overwriting userData
             const spriteRef = target.userData.sprite;
+
+            // Update material with transparency enabled
             spriteRef.material.map = texture;
+            spriteRef.material.transparent = true;
             spriteRef.material.needsUpdate = true;
+
+            // Ensure sprite is visible
+            spriteRef.visible = true;
+
+            console.log(`✅ Balloon #${number}: sprite visible=${spriteRef.visible}, scale=${spriteRef.scale.x}, hasTexture=${!!spriteRef.material.map}`);
 
             // Assign target properties (preserve sprite reference)
             target.userData = {
@@ -867,6 +881,13 @@
                 const isAnswer = num === answer;
                 const isStrategy = strategy.includes(num) && !isAnswer;
                 createTarget(num, isAnswer, isStrategy);
+            });
+
+            // Diagnostic: Check all targets and sprites
+            console.log('🎯 Spawned targets diagnostic:');
+            STATE.targets.forEach((t, i) => {
+                const sprite = t.userData.sprite;
+                console.log(`  [${i}] Number: ${t.userData.number}, Sprite: visible=${sprite.visible}, hasMap=${!!sprite.material.map}, scale=${sprite.scale.x}`);
             });
         }
 
