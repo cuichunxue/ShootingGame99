@@ -1092,10 +1092,10 @@
                 STATE.scene.remove(STATE.lasers[handIndex]);
             }
 
-            // Crosshair (large circle for easy aiming)
+            // Crosshair (2x larger for better visibility)
             const targetPos = startPos.clone().add(direction.clone().multiplyScalar(15));
 
-            const geometry = new THREE.RingGeometry(0.9, 1.4, 24); // Larger ring
+            const geometry = new THREE.RingGeometry(1.8, 2.8, 24); // 2x larger (was 0.9-1.4)
             const color = handIndex === 0 ? 0xff3333 : 0x33ff33;
             const material = new THREE.MeshBasicMaterial({
                 color,
@@ -1109,8 +1109,8 @@
             // Make crosshair always face camera (not tilted)
             crosshair.lookAt(STATE.camera.position);
 
-            // Add center dot (larger)
-            const dotGeometry = new THREE.CircleGeometry(0.35, 12);
+            // Add center dot (2x larger)
+            const dotGeometry = new THREE.CircleGeometry(0.7, 12); // 2x larger (was 0.35)
             const dot = new THREE.Mesh(dotGeometry, material);
             dot.position.set(0, 0, 0.01);
             crosshair.add(dot);
