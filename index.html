@@ -770,8 +770,13 @@
             mesh.add(string);
 
             // Number sprite on balloon
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: null }));
-            sprite.scale.set(1.5, 1.5, 1);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: null,
+                transparent: true,
+                depthTest: true,
+                depthWrite: false
+            }));
+            sprite.scale.set(2.0, 2.0, 1); // Larger for better visibility
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
 
@@ -1525,8 +1530,19 @@
             requestAnimationFrame(gameLoop);
         }
 
+        let detectionFrameCount = 0;
         async function detectionLoop() {
-            if (!STATE.isRunning || STATE.isPaused || !STATE.modelReady) return;
+            if (!STATE.isRunning || STATE.isPaused || !STATE.modelReady) {
+                if (detectionFrameCount === 0) {
+                    console.log('⏸️ Detection loop waiting. isRunning:', STATE.isRunning, 'isPaused:', STATE.isPaused, 'modelReady:', STATE.modelReady);
+                }
+                return;
+            }
+
+            detectionFrameCount++;
+            if (detectionFrameCount === 1) {
+                console.log('👁️ First detection frame!');
+            }
 
             const now = Date.now();
 
