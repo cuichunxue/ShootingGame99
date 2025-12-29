@@ -756,8 +756,13 @@
             mesh.add(string);
 
             // Number sprite on balloon
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: null }));
-            sprite.scale.set(1.5, 1.5, 1);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: null,
+                depthTest: false, // Render on top
+                sizeAttenuation: false // Don't scale with distance
+            }));
+            sprite.scale.set(2.5, 2.5, 1); // Larger
+            sprite.renderOrder = 999; // Render last
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
 
