@@ -761,7 +761,7 @@
                 depthTest: false, // Render on top
                 sizeAttenuation: false // Always same size (readable at any distance)
             }));
-            sprite.scale.set(0.75, 0.75, 1); // Scaled proportionally to balloon (2.5x from 0.3)
+            sprite.scale.set(0.375, 0.375, 1); // 1/2 size for better readability
             sprite.renderOrder = 999; // Render last
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
