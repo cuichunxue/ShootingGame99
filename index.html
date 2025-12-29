@@ -29,6 +29,18 @@
             position: fixed;
             top: 0;
             left: 0;
+            z-index: 0;
+        }
+
+        #handCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 50;
+            pointer-events: none;
         }
 
         /* NEVER DISPLAY CAMERA */
@@ -155,24 +167,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
-            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+            gap: 0.3rem;
         }
 
         .hud-item {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 0.6rem 1.2rem;
-            border-radius: 12px;
-            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.35rem 0.7rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
             font-weight: bold;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
         }
 
         .player-scores {
-            display: flex;
-            gap: 0.5rem;
-            flex: 1;
-            justify-content: space-around;
+            display: none; /* Hide in solo mode to save space */
         }
 
         .player-score {
@@ -193,18 +202,18 @@
             border-color: #44ff44;
         }
 
-        /* QUESTION DISPLAY - NO HINTS, JUST THE QUESTION */
+        /* QUESTION DISPLAY - COMPACT */
         .question-display {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
-            padding: 1.2rem 2.5rem;
-            border-radius: 16px;
-            font-size: 2.5rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+            padding: 0.6rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1.8rem;
             text-align: center;
-            margin: 1rem auto;
-            max-width: 90%;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            margin: 0.5rem auto;
+            max-width: 80%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             font-weight: bold;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
         }
 
         .streak-glow {
@@ -302,6 +311,9 @@
 
     <!-- Three.js Canvas -->
     <canvas id="gameCanvas"></canvas>
+
+    <!-- Hand Tracking Visualization Canvas -->
+    <canvas id="handCanvas"></canvas>
 
     <!-- MINIMAL HUD -->
     <div id="hud" class="hidden">
@@ -972,6 +984,69 @@
 
         function onHandsResults(results) {
             STATE.handsData = results.multiHandLandmarks || [];
+
+            // Draw hand visualization on canvas
+            const canvas = document.getElementById('handCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw hand landmarks and aiming circle
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const indexTip = landmarks[8]; // Index finger tip
+
+                // Convert normalized coordinates to canvas coordinates
+                const x = indexTip.x * canvas.width;
+                const y = indexTip.y * canvas.height;
+
+                // Draw aiming circle at index finger tip
+                ctx.beginPath();
+                ctx.arc(x, y, 30, 0, Math.PI * 2);
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw center dot
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00ff00';
+                ctx.fill();
+
+                // Draw hand skeleton (connect landmarks)
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.lineWidth = 2;
+
+                // Connection pairs for hand skeleton
+                const connections = [
+                    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+                    [0, 5], [5, 6], [6, 7], [7, 8], // Index
+                    [0, 9], [9, 10], [10, 11], [11, 12], // Middle
+                    [0, 13], [13, 14], [14, 15], [15, 16], // Ring
+                    [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
+                    [5, 9], [9, 13], [13, 17] // Palm
+                ];
+
+                connections.forEach(([start, end]) => {
+                    const startLm = landmarks[start];
+                    const endLm = landmarks[end];
+                    ctx.beginPath();
+                    ctx.moveTo(startLm.x * canvas.width, startLm.y * canvas.height);
+                    ctx.lineTo(endLm.x * canvas.width, endLm.y * canvas.height);
+                    ctx.stroke();
+                });
+
+                // Draw landmarks as dots
+                landmarks.forEach((landmark, i) => {
+                    ctx.beginPath();
+                    ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = i === 8 ? '#ffff00' : '#00ff00'; // Yellow for index tip
+                    ctx.fill();
+                });
+            }
 
             // Assign stable hand IDs
             if (results.multiHandedness) {
