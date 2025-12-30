@@ -1041,9 +1041,27 @@
                 ).normalize();
 
                 // Mirror mode - flip X for natural movement
-                const worldX = -(indexTip.x - 0.5) * 35;
-                const worldY = -(indexTip.y - 0.5) * 25;
+                let worldX = -(indexTip.x - 0.5) * 35;
+                let worldY = -(indexTip.y - 0.5) * 25;
                 const worldZ = -8;
+
+                // Light smoothing to ignore unintentional micro-movements
+                if (handState.lastPos) {
+                    const deltaX = worldX - handState.lastPos.x;
+                    const deltaY = worldY - handState.lastPos.y;
+                    const movement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                    // Ignore very small movements (< 0.3 units)
+                    if (movement < 0.3) {
+                        worldX = handState.lastPos.x;
+                        worldY = handState.lastPos.y;
+                    } else {
+                        // Light smoothing (70% new position)
+                        worldX = handState.lastPos.x + deltaX * 0.7;
+                        worldY = handState.lastPos.y + deltaY * 0.7;
+                    }
+                }
+                handState.lastPos = { x: worldX, y: worldY };
 
                 const startPos = new THREE.Vector3(worldX, worldY, worldZ);
 
