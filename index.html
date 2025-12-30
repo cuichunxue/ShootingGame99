@@ -1041,9 +1041,16 @@
                 ).normalize();
 
                 // Mirror mode - flip X for natural movement
-                const worldX = -(indexTip.x - 0.5) * 35;
-                const worldY = -(indexTip.y - 0.5) * 25;
+                let worldX = -(indexTip.x - 0.5) * 35;
+                let worldY = -(indexTip.y - 0.5) * 25;
                 const worldZ = -8;
+
+                // Very light smoothing (85% new) to reduce jitter while staying responsive
+                if (handState.lastPos) {
+                    worldX = handState.lastPos.x + (worldX - handState.lastPos.x) * 0.85;
+                    worldY = handState.lastPos.y + (worldY - handState.lastPos.y) * 0.85;
+                }
+                handState.lastPos = { x: worldX, y: worldY };
 
                 const startPos = new THREE.Vector3(worldX, worldY, worldZ);
 
@@ -1105,7 +1112,7 @@
             // Crosshair (large circle for easy aiming)
             const targetPos = startPos.clone().add(direction.clone().multiplyScalar(15));
 
-            const geometry = new THREE.RingGeometry(0.9, 1.4, 24); // Larger ring
+            const geometry = new THREE.RingGeometry(1.8, 2.8, 24); // 2x larger than main for easier aiming
             const color = handIndex === 0 ? 0xff3333 : 0x33ff33;
             const material = new THREE.MeshBasicMaterial({
                 color,
@@ -1119,7 +1126,7 @@
             crosshair.lookAt(startPos);
 
             // Add center dot (larger)
-            const dotGeometry = new THREE.CircleGeometry(0.35, 12);
+            const dotGeometry = new THREE.CircleGeometry(0.7, 12); // 2x larger center dot
             const dot = new THREE.Mesh(dotGeometry, material);
             dot.position.set(0, 0, 0.01);
             crosshair.add(dot);
