@@ -1051,14 +1051,14 @@
                     const deltaY = worldY - handState.lastPos.y;
                     const movement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                    // Ignore very small movements (< 0.3 units)
-                    if (movement < 0.3) {
+                    // Ignore small movements (< 0.5 units) for stability
+                    if (movement < 0.5) {
                         worldX = handState.lastPos.x;
                         worldY = handState.lastPos.y;
                     } else {
-                        // Light smoothing (70% new position)
-                        worldX = handState.lastPos.x + deltaX * 0.7;
-                        worldY = handState.lastPos.y + deltaY * 0.7;
+                        // Stronger smoothing (30% new position) for stable tracking
+                        worldX = handState.lastPos.x + deltaX * 0.3;
+                        worldY = handState.lastPos.y + deltaY * 0.3;
                     }
                 }
                 handState.lastPos = { x: worldX, y: worldY };
