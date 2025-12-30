@@ -1102,30 +1102,26 @@
                 STATE.scene.remove(STATE.lasers[handIndex]);
             }
 
-            // Crosshair (2x larger for better visibility)
+            // Crosshair (large circle for easy aiming)
             const targetPos = startPos.clone().add(direction.clone().multiplyScalar(15));
 
-            const geometry = new THREE.RingGeometry(2.4, 3.6, 24); // Larger for better visibility
+            const geometry = new THREE.RingGeometry(0.9, 1.4, 24); // Larger ring
             const color = handIndex === 0 ? 0xff3333 : 0x33ff33;
             const material = new THREE.MeshBasicMaterial({
                 color,
                 opacity: 0.9,
                 transparent: true,
-                side: THREE.DoubleSide,
-                depthTest: false // Always render on top
+                side: THREE.DoubleSide
             });
 
             const crosshair = new THREE.Mesh(geometry, material);
             crosshair.position.copy(targetPos);
-            // Make crosshair always face camera (not tilted)
-            crosshair.lookAt(STATE.camera.position);
-            crosshair.renderOrder = 1000; // Render after balloons (balloons use 999 for numbers)
+            crosshair.lookAt(startPos);
 
-            // Add center dot (2x larger)
-            const dotGeometry = new THREE.CircleGeometry(0.9, 12); // Center dot
+            // Add center dot (larger)
+            const dotGeometry = new THREE.CircleGeometry(0.35, 12);
             const dot = new THREE.Mesh(dotGeometry, material);
             dot.position.set(0, 0, 0.01);
-            dot.renderOrder = 1001; // Render on top of crosshair ring
             crosshair.add(dot);
 
             STATE.scene.add(crosshair);
