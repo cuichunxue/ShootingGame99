@@ -401,8 +401,8 @@
 
             // Hand tracking (max 2 hands)
             handStates: [
-                { state: 'idle', handedness: null, lastPos: null, cooldownEnd: 0, landmarkIndex: null },
-                { state: 'idle', handedness: null, lastPos: null, cooldownEnd: 0, landmarkIndex: null }
+                { state: 'idle', handedness: null, lastPos: null, cooldownEnd: 0, landmarkIndex: null, prevY: null, prevTime: 0 },
+                { state: 'idle', handedness: null, lastPos: null, cooldownEnd: 0, landmarkIndex: null, prevY: null, prevTime: 0 }
             ],
 
             // Timing
@@ -761,7 +761,7 @@
                 depthTest: false, // Render on top
                 sizeAttenuation: false // Always same size (readable at any distance)
             }));
-            sprite.scale.set(0.375, 0.375, 1); // 1/2 size for better readability
+            sprite.scale.set(0.5, 0.5, 1); // 2/3 size for optimal readability
             sprite.renderOrder = 999; // Render last
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
@@ -1041,9 +1041,17 @@
                 ).normalize();
 
                 // Mirror mode - flip X for natural movement
-                const worldX = -(indexTip.x - 0.5) * 35;
-                const worldY = -(indexTip.y - 0.5) * 25;
+                let worldX = -(indexTip.x - 0.5) * 35;
+                let worldY = -(indexTip.y - 0.5) * 25;
                 const worldZ = -8;
+
+                // SMOOTH TRACKING: Reduce jitter from unintentional movements
+                const SMOOTHING = 0.3; // Lower = smoother, higher = more responsive
+                if (handState.lastPos) {
+                    worldX = handState.lastPos.x + (worldX - handState.lastPos.x) * SMOOTHING;
+                    worldY = handState.lastPos.y + (worldY - handState.lastPos.y) * SMOOTHING;
+                }
+                handState.lastPos = { x: worldX, y: worldY };
 
                 const startPos = new THREE.Vector3(worldX, worldY, worldZ);
 
@@ -1051,9 +1059,21 @@
 
                 const COOLDOWN_MS = 400; // Cooldown between shots
 
-                // SIMPLE FSM: Extended → Curled = SHOOT
+                // UPWARD FLICK GESTURE: Track Y velocity for shooting
+                const currentY = indexTip.y;
+                let yVelocity = 0;
+                if (handState.prevY !== null && handState.prevTime > 0) {
+                    const deltaTime = now - handState.prevTime;
+                    if (deltaTime > 0) {
+                        yVelocity = (handState.prevY - currentY) / deltaTime; // Negative Y = upward
+                    }
+                }
+                handState.prevY = currentY;
+                handState.prevTime = now;
+
+                // GESTURE FSM: Extended → Upward Flick = SHOOT
                 const isExtended = fingerLength > 0.08;  // Finger straight
-                const isCurled = fingerLength < 0.05;    // Finger bent
+                const isFlickingUp = yVelocity > 0.015;  // Rapid upward movement
 
                 switch (handState.state) {
                     case 'idle':
@@ -1063,10 +1083,10 @@
                         break;
 
                     case 'ready':
-                        if (isCurled) {
+                        if (isFlickingUp) {
                             handState.state = 'fired';
                             fireShot(startPos, aimDir, handIndex);
-                        } else if (!isExtended && fingerLength < 0.06) {
+                        } else if (!isExtended) {
                             handState.state = 'idle';
                         }
                         break;
