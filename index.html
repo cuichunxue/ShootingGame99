@@ -761,7 +761,7 @@
                 depthTest: false, // Render on top
                 sizeAttenuation: false // Always same size (readable at any distance)
             }));
-            sprite.scale.set(0.5, 0.5, 1); // 2/3 size for optimal readability
+            sprite.scale.set(0.25, 0.25, 1); // 1/2 size for compact display
             sprite.renderOrder = 999; // Render last
             mesh.add(sprite);
             mesh.userData.sprite = sprite;
@@ -1046,7 +1046,7 @@
                 const worldZ = -8;
 
                 // SMOOTH TRACKING: Reduce jitter from unintentional movements
-                const SMOOTHING = 0.3; // Lower = smoother, higher = more responsive
+                const SMOOTHING = 0.6; // Lower = smoother, higher = more responsive
                 if (handState.lastPos) {
                     worldX = handState.lastPos.x + (worldX - handState.lastPos.x) * SMOOTHING;
                     worldY = handState.lastPos.y + (worldY - handState.lastPos.y) * SMOOTHING;
