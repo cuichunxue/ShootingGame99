@@ -1132,18 +1132,21 @@
                 color,
                 opacity: 0.9,
                 transparent: true,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                depthTest: false // Always render on top
             });
 
             const crosshair = new THREE.Mesh(geometry, material);
             crosshair.position.copy(targetPos);
             // Make crosshair always face camera (not tilted)
             crosshair.lookAt(STATE.camera.position);
+            crosshair.renderOrder = 1000; // Render after balloons (balloons use 999 for numbers)
 
             // Add center dot (2x larger)
             const dotGeometry = new THREE.CircleGeometry(0.9, 12); // Center dot
             const dot = new THREE.Mesh(dotGeometry, material);
             dot.position.set(0, 0, 0.01);
+            dot.renderOrder = 1001; // Render on top of crosshair ring
             crosshair.add(dot);
 
             STATE.scene.add(crosshair);
